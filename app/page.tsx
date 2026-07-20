@@ -277,7 +277,7 @@ export default function Home() {
       ...addMessage(current, {
         role: "agent",
         kind: "track-introduction",
-        content: track.introduction,
+        content: `*${track.title}*\n${track.introduction}`,
         trackId,
       }),
       introducedTrackIds: [...current.introducedTrackIds, trackId],
