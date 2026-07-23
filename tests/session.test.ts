@@ -3,7 +3,7 @@ import { appendTracksInputSchema, playlistSchema } from "../src/lib/schema";
 import { appendTracks, appendTracksToPlaylist, buildEmptyPlaylist, clearLegacySession, loadPlaylist, loadPrefs, moveTrack, newSession, persistPrefs, removeTrack, startNewPlaylist } from "../src/lib/session";
 import { fixturePlaylist } from "../src/lib/fixture";
 
-const track = (title = "New song", invalid = false) => ({ title, artist: "New artist", selectionReason: "A fitting continuation for this test playlist.", playlistRole: "Closer", introduction: "x", backgroundConfidence: "high" as const, sourceLinks: ["https://example.com/new"], playbackSources: [{ videoId: "vx4kLgnFexo", sourceType: "official-audio" as const }, ...(invalid ? [{ videoId: "J_QGZspO4gg", sourceType: "topic" as const }] : [])] });
+const track = (title = "New song") => ({ title, artist: "New artist", selectionReason: "A fitting continuation for this test playlist.", playlistRole: "Closer", introduction: "x", backgroundConfidence: "high" as const, sourceLinks: ["https://example.com/new"], playbackSource: { videoId: "vx4kLgnFexo", sourceType: "official-audio" as const } });
 const input = (tracks = [track()]) => appendTracksInputSchema.parse({ tracks });
 
 describe("playlist session", () => {
@@ -37,18 +37,11 @@ describe("playlist session", () => {
     const ended = { ...initial, playback: { ...initial.playback, status: "ended" as const, currentTimeSeconds: 99 } };
     expect(appendTracks(ended, playlist).playback).toEqual(ended.playback);
   });
-  it("does not play when all appended sources are invalid", () => {
+  it("starts from the first appended track and enforces the twenty-track limit", () => {
     const empty = startNewPlaylist(newSession(), buildEmptyPlaylist({ title: "New", description: "New playlist." }));
-    const playlist = appendTracksToPlaylist(empty.playlist!, input([track("Bad")]), { createId: () => "bad" });
-    playlist.tracks[0].playbackSources.forEach((source) => { source.validationStatus = "invalid"; });
-    expect(appendTracks(empty, playlist).playback.status).toBe("idle");
-  });
-  it("skips an invalid appended track and enforces the twenty-track limit", () => {
-    const empty = startNewPlaylist(newSession(), buildEmptyPlaylist({ title: "New", description: "New playlist." }));
-    const playlist = appendTracksToPlaylist(empty.playlist!, input([track("Bad"), track("Good")]), { createId: (() => { let index = 0; return () => `id-${index++}`; })() });
-    playlist.tracks[0].playbackSources.forEach((source) => { source.validationStatus = "invalid"; });
-    expect(appendTracks(empty, playlist).playback.activeTrackId).toBe("id-2");
-    const full = { ...empty.playlist!, tracks: Array.from({ length: 20 }, (_, index) => ({ ...playlist.tracks[1], id: `track-${index}`, title: `Track ${index}`, playbackSources: playlist.tracks[1].playbackSources.map((source) => ({ ...source, id: `source-${index}` })) })) };
+    const playlist = appendTracksToPlaylist(empty.playlist!, input([track("Good")]), { createId: () => "id-1" });
+    expect(appendTracks(empty, playlist).playback.activeTrackId).toBe("id-1");
+    const full = { ...empty.playlist!, tracks: Array.from({ length: 20 }, (_, index) => ({ ...playlist.tracks[0], id: `track-${index}`, title: `Track ${index}` })) };
     expect(() => appendTracksToPlaylist(full, input())).toThrow(/20-track/);
   });
   it("rejects duplicate tracks and validates mutations", () => {

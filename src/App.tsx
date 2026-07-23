@@ -92,10 +92,7 @@ export default function App() {
   const showTypingIndicator = agentBusy && !agentText;
   const active = session ? getActiveTrack(session) : undefined;
   const preferences = session?.agentSettings;
-  const activeHasUsableSource =
-    active?.playbackSources.some(
-      (source) => source.validationStatus !== "invalid",
-    ) ?? false;
+  const activeHasUsableSource = Boolean(active?.playbackSource);
   const availableProviders = providerOptions.filter((item) => item.available);
   const desktopDefault =
     desktopSettings.defaultProvider &&
@@ -290,11 +287,6 @@ export default function App() {
       playback: {
         ...current.playback,
         activeTrackId: trackId,
-        activeSourceId: current.playlist?.tracks
-          .find((track) => track.id === trackId)
-          ?.playbackSources.find(
-            (source) => source.validationStatus !== "invalid",
-          )?.id,
         status: play ? "loading" : "ready",
         hasPlaybackGesture: play || current.playback.hasPlaybackGesture,
         currentTimeSeconds: 0,
@@ -605,7 +597,6 @@ export default function App() {
                 <YouTubePlayer
                   track={active}
                   ariaLabel={interpolate(copy.player.youtube, { title: active?.title ?? "YouTube" })}
-                  activeSourceId={session.playback.activeSourceId}
                   playing={
                     session.playback.status === "playing" ||
                     session.playback.status === "loading"
@@ -727,9 +718,6 @@ export default function App() {
                       {track.artist} · {track.playlistRole}
                     </small>
                   </span>
-                  {track.playbackSources.every(
-                    (source) => source.validationStatus === "invalid",
-                  ) && <b>{copy.playlist.invalidSource}</b>}
                 </button>
                 <div className="row-actions">
                   <button

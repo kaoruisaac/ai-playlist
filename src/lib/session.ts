@@ -10,7 +10,7 @@ type BuildOptions = { now?: string; createId?: () => string };
 
 export function buildTracksFromInput(inputs: TrackInput[], options: BuildOptions = {}): Track[] {
   const createId = options.createId ?? id;
-  return inputs.map((track) => ({ ...track, id: createId(), playbackSources: track.playbackSources.map((source) => ({ ...source, id: createId(), platform: "youtube" as const, url: `https://www.youtube.com/watch?v=${source.videoId}`, validationStatus: "pending" as const })) }));
+  return inputs.map((track) => ({ ...track, id: createId(), playbackSource: { ...track.playbackSource, platform: "youtube" as const, url: `https://www.youtube.com/watch?v=${track.playbackSource.videoId}` } }));
 }
 
 export function buildEmptyPlaylist(input: StartNewPlaylistInput, options: BuildOptions = {}): Playlist {
@@ -48,14 +48,14 @@ export const addMessage = (session: PlaylistSession, message: Omit<ChatMessage, 
 
 export function startNewPlaylist(session: PlaylistSession, playlist: Playlist): PlaylistSession {
   if (!playlistSchema.safeParse(playlist).success) throw new Error("Playlist data is incomplete; no change was applied.");
-  return { ...session, updatedAt: now(), playlist, introducedTrackIds: [], playback: { ...session.playback, activeTrackId: undefined, activeSourceId: undefined, status: "idle", currentTimeSeconds: 0 } };
+  return { ...session, updatedAt: now(), playlist, introducedTrackIds: [], playback: { ...session.playback, activeTrackId: undefined, status: "idle", currentTimeSeconds: 0 } };
 }
 
 /** UI-only full playlist loader used by the demo button. */
 export function loadPlaylist(session: PlaylistSession, playlist: Playlist): PlaylistSession {
   if (!playlistSchema.safeParse(playlist).success) throw new Error("Playlist data is incomplete; no change was applied.");
-  const first = playlist.tracks.find((track) => track.playbackSources.some((source) => source.validationStatus !== "invalid"));
-  return { ...session, updatedAt: now(), playlist, playback: { ...session.playback, activeTrackId: first?.id, activeSourceId: first?.playbackSources.find((source) => source.validationStatus !== "invalid")?.id, status: first ? "loading" : "idle", currentTimeSeconds: 0 } };
+  const first = playlist.tracks[0];
+  return { ...session, updatedAt: now(), playlist, playback: { ...session.playback, activeTrackId: first?.id, status: first ? "loading" : "idle", currentTimeSeconds: 0 } };
 }
 
 export function appendTracks(session: PlaylistSession, playlist: Playlist): PlaylistSession {
@@ -66,13 +66,12 @@ export function appendTracks(session: PlaylistSession, playlist: Playlist): Play
   // includes idle and ended sessions: only the first append into an empty list
   // starts playback.
   if (!wasEmptyBeforeAppend) return { ...session, updatedAt: now(), playlist };
-  const first = added.find((track) => track.playbackSources.some((source) => source.validationStatus !== "invalid"));
+  const first = added[0];
   if (!first) return { ...session, updatedAt: now(), playlist };
-  return { ...session, updatedAt: now(), playlist, playback: { ...session.playback, activeTrackId: first.id, activeSourceId: first.playbackSources.find((source) => source.validationStatus !== "invalid")?.id, status: "loading", currentTimeSeconds: 0 } };
+  return { ...session, updatedAt: now(), playlist, playback: { ...session.playback, activeTrackId: first.id, status: "loading", currentTimeSeconds: 0 } };
 }
 
-export function removeTrack(session: PlaylistSession, trackId: string): PlaylistSession { if (!session.playlist) return session; const tracks = session.playlist.tracks.filter((track) => track.id !== trackId); const wasActive = session.playback.activeTrackId === trackId; const oldIndex = session.playlist.tracks.findIndex((track) => track.id === trackId); const next = tracks[oldIndex] ?? tracks[oldIndex - 1]; return { ...session, updatedAt: now(), playlist: { ...session.playlist, tracks, updatedAt: now() }, playback: wasActive ? { ...session.playback, activeTrackId: next?.id, activeSourceId: next?.playbackSources[0]?.id, status: next ? "ready" : "idle", currentTimeSeconds: 0 } : session.playback }; }
+export function removeTrack(session: PlaylistSession, trackId: string): PlaylistSession { if (!session.playlist) return session; const tracks = session.playlist.tracks.filter((track) => track.id !== trackId); const wasActive = session.playback.activeTrackId === trackId; const oldIndex = session.playlist.tracks.findIndex((track) => track.id === trackId); const next = tracks[oldIndex] ?? tracks[oldIndex - 1]; return { ...session, updatedAt: now(), playlist: { ...session.playlist, tracks, updatedAt: now() }, playback: wasActive ? { ...session.playback, activeTrackId: next?.id, status: next ? "ready" : "idle", currentTimeSeconds: 0 } : session.playback }; }
 export function moveTrack(session: PlaylistSession, trackId: string, direction: -1 | 1): PlaylistSession { if (!session.playlist) return session; const tracks = [...session.playlist.tracks], index = tracks.findIndex((track) => track.id === trackId), target = index + direction; if (index < 0 || target < 0 || target >= tracks.length) return session; [tracks[index], tracks[target]] = [tracks[target], tracks[index]]; return { ...session, updatedAt: now(), playlist: { ...session.playlist, tracks, updatedAt: now() } }; }
-export function markSourceInvalid(session: PlaylistSession, trackId: string, sourceId: string): PlaylistSession { if (!session.playlist) return session; return { ...session, playlist: { ...session.playlist, tracks: session.playlist.tracks.map((track) => track.id === trackId ? { ...track, playbackSources: track.playbackSources.map((source) => source.id === sourceId ? { ...source, validationStatus: "invalid" } : source) } : track), updatedAt: now() } }; }
 
 export const getActiveTrack = (session: PlaylistSession): Track | undefined => session.playlist?.tracks.find((track) => track.id === session.playback.activeTrackId);

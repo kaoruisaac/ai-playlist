@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { appendTracksArgsSchema, appendTracksInputSchema, playlistSchema, startNewPlaylistArgsSchema, startNewPlaylistInputSchema } from "../src/lib/schema";
 import { buildEmptyPlaylist } from "../src/lib/session";
 
-const track = { title: "Song", artist: "Artist", selectionReason: "A fitting continuation for this test playlist.", playlistRole: "Middle", introduction: "A short introduction.", backgroundConfidence: "high" as const, sourceLinks: ["https://example.com/source"], playbackSources: [{ videoId: "vx4kLgnFexo", sourceType: "official-audio" as const }] };
+const track = { title: "Song", artist: "Artist", selectionReason: "A fitting continuation for this test playlist.", playlistRole: "Middle", introduction: "A short introduction.", backgroundConfidence: "high" as const, sourceLinks: ["https://example.com/source"], playbackSource: { videoId: "vx4kLgnFexo", sourceType: "official-audio" as const } };
 
 describe("playlist schemas", () => {
   it("accepts an empty playlist without derived fields", () => {
@@ -20,6 +20,8 @@ describe("playlist schemas", () => {
     expect(appendTracksInputSchema.safeParse({ tracks: [] }).success).toBe(false);
     expect(appendTracksInputSchema.safeParse({ tracks: [track, track] }).success).toBe(false);
     expect(appendTracksInputSchema.safeParse({ tracks: [track] }).success).toBe(true);
+    expect(appendTracksInputSchema.safeParse({ tracks: [{ ...track, playbackSources: [track.playbackSource] }] }).success).toBe(false);
+    expect(appendTracksInputSchema.safeParse({ tracks: [{ ...track, playbackSource: { ...track.playbackSource, videoId: "invalid" } }] }).success).toBe(false);
     expect(appendTracksArgsSchema.required).toEqual(["tracks"]);
   });
 });

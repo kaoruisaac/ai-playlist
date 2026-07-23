@@ -17,7 +17,7 @@ describe("i18n", () => {
     expect(Object.keys(translations.en).sort()).toEqual(Object.keys(translations["zh-TW"]).sort());
     const zh = fixturePlaylist("zh-TW"), en = fixturePlaylist("en");
     expect(zh.title).not.toBe(en.title);
-    expect(zh.tracks.map((track) => [track.title, track.artist, track.playbackSources[0].videoId])).toEqual(en.tracks.map((track) => [track.title, track.artist, track.playbackSources[0].videoId]));
+    expect(zh.tracks.map((track) => [track.title, track.artist, track.playbackSource.videoId])).toEqual(en.tracks.map((track) => [track.title, track.artist, track.playbackSource.videoId]));
   });
   it("keeps independent, complete guidance for both locales", () => {
     const zh = getAgentGuidance("zh-TW"), en = getAgentGuidance("en");

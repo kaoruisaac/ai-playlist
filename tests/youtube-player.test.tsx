@@ -43,7 +43,7 @@ describe("YouTubePlayer visibility", () => {
 
     view.rerender(<YouTubePlayer track={playlist.tracks[1]} playing={false} {...callbacks} />);
     expect(player?.cueVideoById).toHaveBeenCalledTimes(2);
-    expect(player?.cueVideoById).toHaveBeenLastCalledWith(playlist.tracks[1].playbackSources[0].videoId);
+    expect(player?.cueVideoById).toHaveBeenLastCalledWith(playlist.tracks[1].playbackSource.videoId);
     expect(shell.getAttribute("data-video-visible")).toBe("false");
     act(() => events.onStateChange({ data: 1 }));
     expect(shell.getAttribute("data-video-visible")).toBe("true");
@@ -73,7 +73,7 @@ describe("YouTubePlayer visibility", () => {
     const loadCount = player!.loadVideoById.mock.calls.length;
     const cueCount = player!.cueVideoById.mock.calls.length;
 
-    const normalizedTrack = { ...track, playbackSources: track.playbackSources.map((source) => ({ ...source })) };
+    const normalizedTrack = { ...track, playbackSource: { ...track.playbackSource } };
     view.rerender(<YouTubePlayer track={normalizedTrack} playing {...callbacks} />);
 
     expect(player!.loadVideoById).toHaveBeenCalledTimes(loadCount);

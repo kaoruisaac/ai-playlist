@@ -34,14 +34,8 @@ function loadApi() {
   return scriptPromise;
 }
 
-function usableSource(track?: Track, activeSourceId?: string): PlaybackSource | undefined {
-  const active = track?.playbackSources.find((source) => source.id === activeSourceId && source.validationStatus !== "invalid");
-  return active ?? track?.playbackSources.find((source) => source.validationStatus !== "invalid");
-}
-
 export function YouTubePlayer({
   track,
-  activeSourceId,
   playing,
   onPlay,
   onPause,
@@ -52,7 +46,6 @@ export function YouTubePlayer({
   ariaLabel,
 }: {
   track?: Track;
-  activeSourceId?: string;
   playing: boolean;
   onPlay: () => void;
   onPause: () => void;
@@ -65,14 +58,13 @@ export function YouTubePlayer({
   const host = useRef<HTMLDivElement>(null);
   const player = useRef<YtPlayer | null>(null);
   const ready = useRef(false);
-  const source = usableSource(track, activeSourceId);
+  const source = track?.playbackSource;
   const hasSource = Boolean(source);
   const sourceRef = useRef<PlaybackSource | undefined>(source);
-  const loadedSourceIdRef = useRef<string | undefined>(undefined);
   const loadedVideoIdRef = useRef<string | undefined>(undefined);
   const playingRef = useRef(playing);
   const callbacks = useRef({ onPlay, onPause, onEnded, onError, onAutoplayBlocked, onTime });
-  const [visibleSourceId, setVisibleSourceId] = useState<string | undefined>();
+  const [visibleVideoId, setVisibleVideoId] = useState<string | undefined>();
 
   useEffect(() => { sourceRef.current = source; }, [source]);
 
@@ -103,25 +95,24 @@ export function YouTubePlayer({
             if (readySource) {
               if (playingRef.current) readyPlayer?.loadVideoById(readySource.videoId);
               else readyPlayer?.cueVideoById(readySource.videoId);
-              loadedSourceIdRef.current = readySource.id;
               loadedVideoIdRef.current = readySource.videoId;
             }
           },
           onStateChange: (event: { data: number }) => {
             if (!window.YT) return;
             if (event.data === window.YT.PlayerState.PLAYING) {
-              setVisibleSourceId(loadedSourceIdRef.current);
+              setVisibleVideoId(loadedVideoIdRef.current);
               callbacks.current.onPlay();
             }
             if (event.data === window.YT.PlayerState.PAUSED) callbacks.current.onPause();
             if (event.data === window.YT.PlayerState.ENDED) callbacks.current.onEnded();
           },
           onError: () => {
-            if (loadedSourceIdRef.current === sourceRef.current?.id) setVisibleSourceId(undefined);
+            if (loadedVideoIdRef.current === sourceRef.current?.videoId) setVisibleVideoId(undefined);
             callbacks.current.onError();
           },
           onAutoplayBlocked: () => {
-            if (loadedSourceIdRef.current === sourceRef.current?.id) setVisibleSourceId(undefined);
+            if (loadedVideoIdRef.current === sourceRef.current?.videoId) setVisibleVideoId(undefined);
             callbacks.current.onAutoplayBlocked();
           },
         },
@@ -130,7 +121,6 @@ export function YouTubePlayer({
     return () => {
       live = false;
       ready.current = false;
-      loadedSourceIdRef.current = undefined;
       loadedVideoIdRef.current = undefined;
       player.current?.destroy();
       player.current = null;
@@ -139,12 +129,11 @@ export function YouTubePlayer({
 
   useEffect(() => {
     if (!source || !ready.current || !player.current) return;
-    const isLoaded = loadedSourceIdRef.current === source.id && loadedVideoIdRef.current === source.videoId;
+    const isLoaded = loadedVideoIdRef.current === source.videoId;
     if (isLoaded) return;
-    setVisibleSourceId(undefined);
+    setVisibleVideoId(undefined);
     if (playingRef.current) player.current.loadVideoById(source.videoId);
     else player.current.cueVideoById(source.videoId);
-    loadedSourceIdRef.current = source.id;
     loadedVideoIdRef.current = source.videoId;
   }, [source]);
 
@@ -163,7 +152,7 @@ export function YouTubePlayer({
   }, []);
 
   return (
-    <div className="video-shell" data-video-visible={Boolean(visibleSourceId && visibleSourceId === source?.id)}>
+    <div className="video-shell" data-video-visible={Boolean(visibleVideoId && visibleVideoId === source?.videoId)}>
       <div ref={host} aria-label={ariaLabel ?? (track ? `${track.title} YouTube player` : "YouTube player")} />
     </div>
   );
