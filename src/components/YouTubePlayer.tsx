@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, useState } from "react";
 import type { PlaybackSource, Track } from "../lib/types";
 

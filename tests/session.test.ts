@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { appendTracksInputSchema, playlistSchema } from "../app/lib/schema";
-import { appendTracks, appendTracksToPlaylist, buildEmptyPlaylist, clearLegacySession, loadPlaylist, loadPrefs, moveTrack, newSession, persistPrefs, removeTrack, startNewPlaylist } from "../app/lib/session";
-import { fixturePlaylist } from "../app/lib/fixture";
+import { appendTracksInputSchema, playlistSchema } from "../src/lib/schema";
+import { appendTracks, appendTracksToPlaylist, buildEmptyPlaylist, clearLegacySession, loadPlaylist, loadPrefs, moveTrack, newSession, persistPrefs, removeTrack, startNewPlaylist } from "../src/lib/session";
+import { fixturePlaylist } from "../src/lib/fixture";
 
 const track = (title = "New song", invalid = false) => ({ title, artist: "New artist", selectionReason: "A fitting continuation for this test playlist.", playlistRole: "Closer", introduction: "x", backgroundConfidence: "high" as const, sourceLinks: ["https://example.com/new"], playbackSources: [{ videoId: "vx4kLgnFexo", sourceType: "official-audio" as const }, ...(invalid ? [{ videoId: "J_QGZspO4gg", sourceType: "topic" as const }] : [])] });
 const input = (tracks = [track()]) => appendTracksInputSchema.parse({ tracks });

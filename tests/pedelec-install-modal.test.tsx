@@ -2,15 +2,15 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { connectPedelec } = vi.hoisted(() => ({ connectPedelec: vi.fn(async (_settings, _update, _get, callbacks) => { callbacks.onState("not-installed"); return null; }) }));
-vi.mock("../app/lib/pedelec", () => ({ connectPedelec }));
+vi.mock("../src/lib/pedelec", () => ({ connectPedelec }));
 
-import Home from "../app/page";
+import App from "../src/App";
 
 describe("Pedelec install prompt", () => {
   beforeEach(() => { localStorage.clear(); Object.defineProperty(navigator, "languages", { configurable: true, value: ["zh-TW"] }); connectPedelec.mockClear(); });
 
   it("opens once after the initial not-installed result and can be dismissed", async () => {
-    render(<Home />);
+    render(<App />);
     await screen.findByRole("dialog", { name: "尚未偵測到 Pedelec" });
     expect(screen.getByRole("link", { name: "下載桌面端" }).getAttribute("href")).toBe("https://pedelec.cc/download");
     expect(screen.getByRole("link", { name: "安裝 Chrome Extension" }).getAttribute("href")).toBe("https://chromewebstore.google.com/detail/pedelec/ogccgaminlphbkeghldidiiimajfdpag");

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { appendTracksArgsSchema, appendTracksInputSchema, playlistSchema, startNewPlaylistArgsSchema, startNewPlaylistInputSchema } from "../app/lib/schema";
-import { buildEmptyPlaylist } from "../app/lib/session";
+import { appendTracksArgsSchema, appendTracksInputSchema, playlistSchema, startNewPlaylistArgsSchema, startNewPlaylistInputSchema } from "../src/lib/schema";
+import { buildEmptyPlaylist } from "../src/lib/session";
 
 const track = { title: "Song", artist: "Artist", selectionReason: "A fitting continuation for this test playlist.", playlistRole: "Middle", introduction: "A short introduction.", backgroundConfidence: "high" as const, sourceLinks: ["https://example.com/source"], playbackSources: [{ videoId: "vx4kLgnFexo", sourceType: "official-audio" as const }] };
 

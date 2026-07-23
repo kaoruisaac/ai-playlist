@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyAgentDraft, hasAgentChatOutput, sanitizeAgentConversation } from "../app/lib/agent-message";
+import { classifyAgentDraft, hasAgentChatOutput, sanitizeAgentConversation } from "../src/lib/agent-message";
 
 describe("sanitizeAgentConversation", () => {
   it("preserves ordinary conversation", () => {
@@ -19,7 +19,7 @@ describe("sanitizeAgentConversation", () => {
   });
 
   it("handles nesting, escaped JSON strings, and invalid bracketed prose", () => {
-    expect(sanitizeAgentConversation('前段 {"nested":{"list":["[x]","a\\\"b"]}} 後段')).toBe("前段 \n 後段");
+    expect(sanitizeAgentConversation('前段 {"nested":{"list":["[x]","a\\"b"]}} 後段')).toBe("前段 \n 後段");
     expect(sanitizeAgentConversation("我會用 {安靜、溫暖} 選歌。 [Live] {foo: bar}")).toBe("我會用 {安靜、溫暖} 選歌。 [Live] {foo: bar}");
   });
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { detectLocale, localeFromBrowser, translations } from "../app/lib/i18n";
-import { fixturePlaylist } from "../app/lib/fixture";
-import { getAgentGuidance } from "../app/lib/agent";
+import { detectLocale, localeFromBrowser, translations } from "../src/lib/i18n";
+import { fixturePlaylist } from "../src/lib/fixture";
+import { getAgentGuidance } from "../src/lib/agent";
 
 describe("i18n", () => {
   it("normalizes browser and saved locales safely", () => {

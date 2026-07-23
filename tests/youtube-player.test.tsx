@@ -1,7 +1,7 @@
 import { act, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fixturePlaylist } from "../app/lib/fixture";
-import { YouTubePlayer } from "../app/components/YouTubePlayer";
+import { fixturePlaylist } from "../src/lib/fixture";
+import { YouTubePlayer } from "../src/components/YouTubePlayer";
 
 let events: Record<string, (event?: { data?: number; target?: FakePlayer }) => void> = {};
 let player: FakePlayer | undefined;

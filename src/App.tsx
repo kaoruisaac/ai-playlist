@@ -1,4 +1,3 @@
-"use client";
 /* eslint-disable react-hooks/exhaustive-deps, react-hooks/immutability */
 
 import { FormEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -58,7 +57,7 @@ function pedelecStateFromSessionStatus(status: string): PedelecState {
   return status === "error" ? "error" : "disconnected";
 }
 
-export default function Home() {
+export default function App() {
   const [session, setSession] = useState<PlaylistSession | null>(null);
   const [state, setState] = useState<PedelecState>("checking");
   const [provider, setProvider] = useState<string | null>(null);

@@ -1,14 +1,14 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PedelecCallbacks } from "../app/lib/pedelec";
+import type { PedelecCallbacks } from "../src/lib/pedelec";
 
 const sendText = vi.fn(async () => {});
 const dispose = vi.fn(async () => {});
 let emittedCallbacks: PedelecCallbacks | undefined;
 const { connectPedelec } = vi.hoisted(() => ({ connectPedelec: vi.fn() }));
-vi.mock("../app/lib/pedelec", () => ({ connectPedelec }));
+vi.mock("../src/lib/pedelec", () => ({ connectPedelec }));
 
-import Home from "../app/page";
+import App from "../src/App";
 
 describe("Pedelec submit flow", () => {
   afterEach(cleanup);
@@ -26,7 +26,7 @@ describe("Pedelec submit flow", () => {
   });
 
   it("sends trimmed input to the live Pedelec session and saves the user message", async () => {
-    render(<Home />);
+    render(<App />);
     const input = await screen.findByPlaceholderText("說說你現在的心情，或給我一個 vibe。");
     await waitFor(() => expect((input as HTMLTextAreaElement).disabled).toBe(false));
     fireEvent.change(input, { target: { value: "  雨後散步  " } });
@@ -36,7 +36,7 @@ describe("Pedelec submit flow", () => {
     expect(screen.queryByText("聽起來這一刻不需要太用力。我會先替你翻幾首合適的歌，再把順序排得自然一點。")).toBeNull();
   });
   it("lets the user persist one track-count preference without changing submitted text", async () => {
-    render(<Home />);
+    render(<App />);
     const choice = await screen.findByRole("radio", { name: "5" });
     expect((screen.getByRole("radio", { name: "10" }) as HTMLInputElement).checked).toBe(true);
     fireEvent.click(choice);
@@ -49,7 +49,7 @@ describe("Pedelec submit flow", () => {
   });
 
   it("never renders streamed JSON and flushes only the surrounding conversation", async () => {
-    render(<Home />);
+    render(<App />);
     await waitFor(() => expect(emittedCallbacks).toBeDefined());
     const context = { sessionId: "test-session", turnId: "turn-1" } as Parameters<PedelecCallbacks["onChatDelta"]>[1] & Parameters<PedelecCallbacks["onBeforeTool"]>[0];
     emittedCallbacks!.onChatDelta("我先整理一下。\n", context);
