@@ -256,7 +256,8 @@ export default function Home() {
       setProvider(connection.provider ?? null);
       setConnectionVersion((version) => version + 1);
       setState(pedelecStateFromSessionStatus(connection.session.getStatus()));
-    } catch {
+    } catch (errors) {
+      console.log(errors);
       if (attempt === attemptRef.current) {
         pedelecConnectionRef.current = null;
         setProvider(null);
