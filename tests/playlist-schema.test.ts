@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { appendTracksArgsSchema, appendTracksInputSchema, playlistSchema, startNewPlaylistArgsSchema, startNewPlaylistInputSchema } from "../src/lib/schema";
 import { buildEmptyPlaylist } from "../src/lib/session";
 
-const track = { title: "Song", artist: "Artist", selectionReason: "A fitting continuation for this test playlist.", playlistRole: "Middle", introduction: "A short introduction.", backgroundConfidence: "high" as const, sourceLinks: ["https://example.com/source"], playbackSource: { videoId: "vx4kLgnFexo", sourceType: "official-audio" as const } };
+const track = { title: "Song", artist: "Artist", playlistRole: "Middle", introduction: "A short introduction.", videoId: "vx4kLgnFexo" };
 
 describe("playlist schemas", () => {
   it("accepts an empty playlist without derived fields", () => {
@@ -15,13 +15,13 @@ describe("playlist schemas", () => {
     expect(startNewPlaylistInputSchema.safeParse({ title: "Fresh", description: "A fresh direction." }).success).toBe(true);
     expect(startNewPlaylistArgsSchema.required).toEqual(["title", "description"]);
   });
-  it("requires a non-empty append payload and rejects duplicates", () => {
+  it("requires a non-empty five-field append payload and rejects old fields", () => {
     expect(appendTracksInputSchema.safeParse({}).success).toBe(false);
     expect(appendTracksInputSchema.safeParse({ tracks: [] }).success).toBe(false);
-    expect(appendTracksInputSchema.safeParse({ tracks: [track, track] }).success).toBe(false);
+    expect(appendTracksInputSchema.safeParse({ tracks: [track, track] }).success).toBe(true);
     expect(appendTracksInputSchema.safeParse({ tracks: [track] }).success).toBe(true);
-    expect(appendTracksInputSchema.safeParse({ tracks: [{ ...track, playbackSources: [track.playbackSource] }] }).success).toBe(false);
-    expect(appendTracksInputSchema.safeParse({ tracks: [{ ...track, playbackSource: { ...track.playbackSource, videoId: "invalid" } }] }).success).toBe(false);
+    expect(appendTracksInputSchema.safeParse({ tracks: [{ ...track, selectionReason: "old" }] }).success).toBe(false);
+    expect(appendTracksInputSchema.safeParse({ tracks: [{ ...track, videoId: "invalid" }] }).success).toBe(false);
     expect(appendTracksArgsSchema.required).toEqual(["tracks"]);
   });
 });

@@ -10,7 +10,7 @@ type BuildOptions = { now?: string; createId?: () => string };
 
 export function buildTracksFromInput(inputs: TrackInput[], options: BuildOptions = {}): Track[] {
   const createId = options.createId ?? id;
-  return inputs.map((track) => ({ ...track, id: createId(), playbackSource: { ...track.playbackSource, platform: "youtube" as const, url: `https://www.youtube.com/watch?v=${track.playbackSource.videoId}` } }));
+  return inputs.map(({ videoId, ...track }) => ({ ...track, id: createId(), playbackSource: { platform: "youtube" as const, videoId, url: `https://www.youtube.com/watch?v=${videoId}` } }));
 }
 
 export function buildEmptyPlaylist(input: StartNewPlaylistInput, options: BuildOptions = {}): Playlist {
@@ -19,10 +19,14 @@ export function buildEmptyPlaylist(input: StartNewPlaylistInput, options: BuildO
 }
 
 export function appendTracksToPlaylist(current: Playlist, input: AppendTracksInput, options: BuildOptions = {}): Playlist {
-  const duplicate = input.tracks.find((track) => current.tracks.some((existing) => normalizeTrackKey(existing.artist, existing.title) === normalizeTrackKey(track.artist, track.title)));
-  if (duplicate) throw new Error(`Duplicate track already exists: ${duplicate.artist} – ${duplicate.title}`);
-  if (current.tracks.length + input.tracks.length > 20) throw new Error("Appending these tracks would exceed the 20-track playlist limit.");
-  return { ...current, tracks: [...current.tracks, ...buildTracksFromInput(input.tracks, options)], updatedAt: options.now ?? now() };
+  const seen = new Set(current.tracks.map((track) => normalizeTrackKey(track.artist, track.title)));
+  let remaining = Math.max(0, 20 - current.tracks.length);
+  const accepted = input.tracks.filter((track) => {
+    const key = normalizeTrackKey(track.artist, track.title);
+    if (seen.has(key) || remaining === 0) return false;
+    seen.add(key); remaining -= 1; return true;
+  });
+  return accepted.length ? { ...current, tracks: [...current.tracks, ...buildTracksFromInput(accepted, options)], updatedAt: options.now ?? now() } : current;
 }
 
 export type PlaylistPreferences = import("./types").AgentSettings;
@@ -43,7 +47,7 @@ export function persistPrefs(settings: Omit<PlaylistPreferences, "locale"> & Par
   try { localStorage.setItem(PREF_KEY, JSON.stringify({ provider: settings.provider, model: settings.model, preferredTrackCount: preferredTrackCount(settings.preferredTrackCount), locale: detectLocale(settings.locale, typeof navigator === "undefined" ? undefined : navigator.languages?.length ? navigator.languages : [navigator.language]) })); } catch { /* storage is optional */ }
 }
 export function clearLegacySession() { try { localStorage.removeItem(SESSION_KEY); } catch { /* storage is optional */ } }
-export const newSession = (): PlaylistSession => ({ schemaVersion: 2, id: id(), createdAt: now(), updatedAt: now(), originalRequest: "", messages: [], playback: { status: "idle", hasPlaybackGesture: false }, agentSettings: loadPrefs(), introducedTrackIds: [] });
+export const newSession = (): PlaylistSession => ({ schemaVersion: 3, id: id(), createdAt: now(), updatedAt: now(), originalRequest: "", messages: [], playback: { status: "idle", hasPlaybackGesture: false }, agentSettings: loadPrefs(), introducedTrackIds: [] });
 export const addMessage = (session: PlaylistSession, message: Omit<ChatMessage, "id" | "createdAt">): PlaylistSession => ({ ...session, updatedAt: now(), messages: [...session.messages, { ...message, id: id(), createdAt: now() }] });
 
 export function startNewPlaylist(session: PlaylistSession, playlist: Playlist): PlaylistSession {

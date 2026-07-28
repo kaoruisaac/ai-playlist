@@ -1,30 +1,14 @@
 import type { ToolArgsSchema } from "@kaoruisaac/pedelec";
 import { z } from "zod";
 
-export const confidenceValues = ["high", "medium", "low", "unverified"] as const;
-export const sourceTypeValues = ["official-mv", "official-audio", "topic", "label", "other"] as const;
-
 export const videoId = z.string().regex(/^[A-Za-z0-9_-]{11}$/, "Invalid YouTube video ID");
 const nonEmptyText = (max: number) => z.string().min(1).max(max);
-const sourceLinksSchema = z.array(z.string().url()).min(1).max(8);
-
-export const playbackSourceInputSchema = z.object({
-  videoId,
-  title: nonEmptyText(300).optional(),
-  channelName: nonEmptyText(200).optional(),
-  sourceType: z.enum(sourceTypeValues),
-});
-
 const trackContentSchema = z.object({
   title: nonEmptyText(150),
   artist: nonEmptyText(150),
-  album: nonEmptyText(150).optional(),
-  releaseYear: z.number().int().min(1900).max(2100).optional(),
-  selectionReason: z.string().min(10).max(300),
   playlistRole: nonEmptyText(80),
   introduction: z.string().min(1).max(200),
-  backgroundConfidence: z.enum(confidenceValues),
-  sourceLinks: sourceLinksSchema,
+  videoId,
 });
 
 const normalizeTrackKey = (artist: string, title: string) => `${artist} ${title}`.toLocaleLowerCase().trim().replace(/\s+/g, " ");
@@ -37,7 +21,7 @@ const rejectDuplicateTracks = (tracks: readonly { artist: string; title: string 
   });
 };
 
-export const trackInputSchema = trackContentSchema.extend({ playbackSource: playbackSourceInputSchema }).strict();
+export const trackInputSchema = trackContentSchema.strict();
 
 export const startNewPlaylistInputSchema = z.object({
   title: nonEmptyText(100),
@@ -45,19 +29,17 @@ export const startNewPlaylistInputSchema = z.object({
 });
 
 export type StartNewPlaylistInput = z.infer<typeof startNewPlaylistInputSchema>;
-export const appendTracksInputSchema = z.object({
-  tracks: z.array(trackInputSchema).min(1).max(20),
-}).superRefine((value, ctx) => rejectDuplicateTracks(value.tracks, ctx));
+export const appendTracksInputSchema = z.object({ tracks: z.array(trackInputSchema).min(1).max(20) }).strict();
 export type AppendTracksInput = z.infer<typeof appendTracksInputSchema>;
 export { normalizeTrackKey };
 
-export const sourceSchema = playbackSourceInputSchema.extend({
+export const sourceSchema = z.object({
   platform: z.literal("youtube"),
+  videoId,
   url: z.string().url().refine((value) => value.startsWith("http://") || value.startsWith("https://"), "URL must use http or https"),
-  thumbnailUrl: z.string().url().optional(),
-});
+}).strict();
 
-export const trackSchema = trackContentSchema.extend({
+export const trackSchema = trackContentSchema.omit({ videoId: true }).extend({
   id: z.string().min(1),
   playbackSource: sourceSchema,
 });
@@ -78,25 +60,11 @@ export const trackArgsSchema = {
         properties: {
           title: { type: "string", minLength: 1, maxLength: 150, description: "Song title." },
           artist: { type: "string", minLength: 1, maxLength: 150, description: "Performing artist." },
-          album: { type: "string", minLength: 1, maxLength: 150, description: "Album name, when known." },
-          releaseYear: { type: "integer", minimum: 1900, maximum: 2100, description: "Release year, when known." },
-          selectionReason: { type: "string", minLength: 10, maxLength: 300, description: "Why this track fits the user's request." },
           playlistRole: { type: "string", minLength: 1, maxLength: 80, description: "This track's sequencing role in the playlist." },
-          introduction: { type: "string", minLength: 1, maxLength: 200, description: "Introduction shown during playback; at most 200 characters. Prefer more than 100 characters, but never invent unsupported background information." },
-          backgroundConfidence: { type: "string", enum: [...confidenceValues], description: "Background-information confidence: high, medium, low, or unverified." },
-          sourceLinks: { type: "array", minItems: 1, maxItems: 8, description: "Specific URLs supporting the background information, not homepages.", items: { type: "string" } },
-          playbackSource: {
-            type: "object", description: "One best, reliable YouTube source. Prefer an official MV, official audio, Topic, or label source.",
-            properties: {
-              videoId: { type: "string", pattern: "^[A-Za-z0-9_-]{11}$", description: "The 11-character YouTube video ID from the v= parameter. Do not submit a full URL.", examples: ["vx4kLgnFexo"] },
-              title: { type: "string", minLength: 1, maxLength: 300, description: "Video title, when useful." },
-              channelName: { type: "string", minLength: 1, maxLength: 200, description: "YouTube channel name, when known." },
-              sourceType: { type: "string", enum: [...sourceTypeValues], description: "Source category: official-mv, official-audio, topic, label, or other." },
-            },
-            required: ["videoId", "sourceType"],
-          },
+          introduction: { type: "string", minLength: 1, maxLength: 200, description: "Introduction shown during playback; at most 200 characters, preferably 80–160." },
+          videoId: { type: "string", pattern: "^[A-Za-z0-9_-]{11}$", description: "The 11-character YouTube video ID. Do not submit a full URL.", examples: ["vx4kLgnFexo"] },
         },
-        required: ["title", "artist", "selectionReason", "playlistRole", "introduction", "playbackSource"],
+        required: ["title", "artist", "playlistRole", "introduction", "videoId"],
       } satisfies ToolArgsSchema;
 
 export const startNewPlaylistArgsSchema = {

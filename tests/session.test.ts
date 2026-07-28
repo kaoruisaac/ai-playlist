@@ -3,7 +3,7 @@ import { appendTracksInputSchema, playlistSchema } from "../src/lib/schema";
 import { appendTracks, appendTracksToPlaylist, buildEmptyPlaylist, clearLegacySession, loadPlaylist, loadPrefs, moveTrack, newSession, persistPrefs, removeTrack, startNewPlaylist } from "../src/lib/session";
 import { fixturePlaylist } from "../src/lib/fixture";
 
-const track = (title = "New song") => ({ title, artist: "New artist", selectionReason: "A fitting continuation for this test playlist.", playlistRole: "Closer", introduction: "x", backgroundConfidence: "high" as const, sourceLinks: ["https://example.com/new"], playbackSource: { videoId: "vx4kLgnFexo", sourceType: "official-audio" as const } });
+const track = (title = "New song") => ({ title, artist: "New artist", playlistRole: "Closer", introduction: "x", videoId: "vx4kLgnFexo" });
 const input = (tracks = [track()]) => appendTracksInputSchema.parse({ tracks });
 
 describe("playlist session", () => {
@@ -42,11 +42,11 @@ describe("playlist session", () => {
     const playlist = appendTracksToPlaylist(empty.playlist!, input([track("Good")]), { createId: () => "id-1" });
     expect(appendTracks(empty, playlist).playback.activeTrackId).toBe("id-1");
     const full = { ...empty.playlist!, tracks: Array.from({ length: 20 }, (_, index) => ({ ...playlist.tracks[0], id: `track-${index}`, title: `Track ${index}` })) };
-    expect(() => appendTracksToPlaylist(full, input())).toThrow(/20-track/);
+    expect(appendTracksToPlaylist(full, input()).tracks).toHaveLength(20);
   });
   it("rejects duplicate tracks and validates mutations", () => {
     const initial = loadPlaylist(newSession(), fixturePlaylist());
-    expect(() => appendTracksToPlaylist(initial.playlist!, input([{ ...track(), title: "My Love Mine All Mine", artist: "Mitski" }]))).toThrow(/Duplicate/);
+    expect(appendTracksToPlaylist(initial.playlist!, input([{ ...track(), title: "My Love Mine All Mine", artist: "Mitski" }])).tracks).toHaveLength(initial.playlist!.tracks.length);
     const moved = moveTrack(initial, "t1", 1);
     const removed = removeTrack(moved, "t1");
     expect(playlistSchema.safeParse(removed.playlist).success).toBe(true);

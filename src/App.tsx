@@ -38,6 +38,7 @@ const providerNames: Record<string, string> = {
   opencode: "OpenCode",
   cursor: "Cursor",
 };
+type TaskProgressPhase = "understanding" | "researching" | "validating_sources" | "completing_playlist" | "updating_playlist";
 
 export function formatProviderName(provider: string) {
   const normalized = provider.trim().toLowerCase();
@@ -76,6 +77,7 @@ export default function App() {
   const [tab, setTab] = useState<"chat" | "music">("chat");
   const [unread, setUnread] = useState(false);
   const [agentText, setAgentText] = useState("");
+  const [progressPhase, setProgressPhase] = useState<TaskProgressPhase | null>(null);
   const [, setConnectionVersion] = useState(0);
   const installPromptShown = useRef(false);
   const installHeading = useRef<HTMLHeadingElement>(null);
@@ -187,7 +189,10 @@ export default function App() {
         () => latestSessionRef.current,
         {
           onState: (next) => {
-            if (attempt === attemptRef.current) setState(next);
+            if (attempt === attemptRef.current) {
+              setState(next);
+              if (next === "connected" || next === "error" || next === "disconnected") setProgressPhase(null);
+            }
           },
           onProviderSettings: (data) => {
             if (attempt !== attemptRef.current) return;
@@ -236,7 +241,12 @@ export default function App() {
               activeTurnIdRef.current === context.turnId
             )
               flushAgentDraft();
+            if (attempt === attemptRef.current && context.sessionId === activeConnectionIdRef.current) {
+              const name = context.tool;
+              setProgressPhase(name === "append_tracks" ? "validating_sources" : name === "remove_tracks" || name === "reorder_tracks" ? "updating_playlist" : "researching");
+            }
           },
+          onTracksAppended: () => { if (attempt === attemptRef.current) setProgressPhase("completing_playlist"); },
         },
       );
       if (attempt !== attemptRef.current) {
@@ -365,6 +375,7 @@ export default function App() {
     );
     setInput("");
     clearAgentDraft();
+    setProgressPhase("understanding");
     const connectionId = connection.session.sessionId;
     try {
       await connection.session.sendText(text);
@@ -506,8 +517,10 @@ export default function App() {
             {showTypingIndicator && (
               <article
                 className="message agent typing-indicator"
-                aria-label={copy.chat.typing}
+                aria-label={progressPhase ? copy.chat.progress[progressPhase] : copy.chat.typing}
+                role="status"
               >
+                {progressPhase && <span>{copy.chat.progress[progressPhase]}</span>}
                 <span className="typing-dot" aria-hidden="true" />
                 <span className="typing-dot" aria-hidden="true" />
                 <span className="typing-dot" aria-hidden="true" />
