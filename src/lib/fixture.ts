@@ -15,7 +15,6 @@ export const fixturePlaylist = (locale: AppLocale = "zh-TW"): Playlist => {
     tracks: songs.map(([id, artist, title, videoId], i) => ({
       id, title, artist,
       playlistRole: (isZh ? zhRoles : enRoles)[i],
-      introduction: isZh ? "簡單的旋律替這段路留下一點呼吸的空間，不急著替情緒命名，而是讓聲音陪著人把當下慢慢整理好，留給下一首自然接手的位置。" : "Its unhurried melody leaves room to breathe rather than naming the feeling too quickly. Let it sit beside the moment, gather it gently, and make space for the next song to arrive naturally.",
       playbackSource: { platform: "youtube", videoId, url: `https://www.youtube.com/watch?v=${videoId}` },
     })),
   };

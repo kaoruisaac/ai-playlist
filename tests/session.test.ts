@@ -3,18 +3,17 @@ import { appendTracksInputSchema, playlistSchema } from "../src/lib/schema";
 import { appendTracks, appendTracksToPlaylist, buildEmptyPlaylist, clearLegacySession, loadPlaylist, loadPrefs, moveTrack, newSession, persistPrefs, removeTrack, startNewPlaylist } from "../src/lib/session";
 import { fixturePlaylist } from "../src/lib/fixture";
 
-const track = (title = "New song") => ({ title, artist: "New artist", playlistRole: "Closer", introduction: "x", videoId: "vx4kLgnFexo" });
+const track = (title = "New song") => ({ title, artist: "New artist", playlistRole: "Closer", videoId: "vx4kLgnFexo" });
 const input = (tracks = [track()]) => appendTracksInputSchema.parse({ tracks });
 
 describe("playlist session", () => {
   beforeEach(() => { localStorage.clear(); Object.defineProperty(navigator, "languages", { configurable: true, value: ["zh-TW"] }); });
   it("starts new playlists empty, clearing playback context while retaining gesture", () => {
-    const initial = { ...loadPlaylist(newSession(), fixturePlaylist()), introducedTrackIds: ["t1"], playback: { ...loadPlaylist(newSession(), fixturePlaylist()).playback, hasPlaybackGesture: true } };
+    const initial = { ...loadPlaylist(newSession(), fixturePlaylist()), playback: { ...loadPlaylist(newSession(), fixturePlaylist()).playback, hasPlaybackGesture: true } };
     const next = startNewPlaylist(initial, buildEmptyPlaylist({ title: "New", description: "New playlist." }));
     expect(next.playlist?.tracks).toEqual([]);
     expect(next.playback).toMatchObject({ status: "idle", hasPlaybackGesture: true, currentTimeSeconds: 0 });
     expect(next.playback.activeTrackId).toBeUndefined();
-    expect(next.introducedTrackIds).toEqual([]);
   });
   it("starts playback from an appended usable track when the playlist was empty", () => {
     const empty = startNewPlaylist(newSession(), buildEmptyPlaylist({ title: "New", description: "New playlist." }));

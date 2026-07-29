@@ -7,7 +7,6 @@ const trackContentSchema = z.object({
   title: nonEmptyText(150),
   artist: nonEmptyText(150),
   playlistRole: nonEmptyText(80),
-  introduction: z.string().min(1).max(200),
   videoId,
 });
 
@@ -61,10 +60,9 @@ export const trackArgsSchema = {
           title: { type: "string", minLength: 1, maxLength: 150, description: "Song title." },
           artist: { type: "string", minLength: 1, maxLength: 150, description: "Performing artist." },
           playlistRole: { type: "string", minLength: 1, maxLength: 80, description: "This track's sequencing role in the playlist." },
-          introduction: { type: "string", minLength: 1, maxLength: 200, description: "Introduction shown during playback; at most 200 characters, preferably 80–160." },
           videoId: { type: "string", pattern: "^[A-Za-z0-9_-]{11}$", description: "The 11-character YouTube video ID. Do not submit a full URL.", examples: ["vx4kLgnFexo"] },
         },
-        required: ["title", "artist", "playlistRole", "introduction", "videoId"],
+        required: ["title", "artist", "playlistRole", "videoId"],
       } satisfies ToolArgsSchema;
 
 export const startNewPlaylistArgsSchema = {

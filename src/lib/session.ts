@@ -47,12 +47,12 @@ export function persistPrefs(settings: Omit<PlaylistPreferences, "locale"> & Par
   try { localStorage.setItem(PREF_KEY, JSON.stringify({ provider: settings.provider, model: settings.model, preferredTrackCount: preferredTrackCount(settings.preferredTrackCount), locale: detectLocale(settings.locale, typeof navigator === "undefined" ? undefined : navigator.languages?.length ? navigator.languages : [navigator.language]) })); } catch { /* storage is optional */ }
 }
 export function clearLegacySession() { try { localStorage.removeItem(SESSION_KEY); } catch { /* storage is optional */ } }
-export const newSession = (): PlaylistSession => ({ schemaVersion: 3, id: id(), createdAt: now(), updatedAt: now(), originalRequest: "", messages: [], playback: { status: "idle", hasPlaybackGesture: false }, agentSettings: loadPrefs(), introducedTrackIds: [] });
+export const newSession = (): PlaylistSession => ({ schemaVersion: 3, id: id(), createdAt: now(), updatedAt: now(), originalRequest: "", messages: [], playback: { status: "idle", hasPlaybackGesture: false }, agentSettings: loadPrefs() });
 export const addMessage = (session: PlaylistSession, message: Omit<ChatMessage, "id" | "createdAt">): PlaylistSession => ({ ...session, updatedAt: now(), messages: [...session.messages, { ...message, id: id(), createdAt: now() }] });
 
 export function startNewPlaylist(session: PlaylistSession, playlist: Playlist): PlaylistSession {
   if (!playlistSchema.safeParse(playlist).success) throw new Error("Playlist data is incomplete; no change was applied.");
-  return { ...session, updatedAt: now(), playlist, introducedTrackIds: [], playback: { ...session.playback, activeTrackId: undefined, status: "idle", currentTimeSeconds: 0 } };
+  return { ...session, updatedAt: now(), playlist, playback: { ...session.playback, activeTrackId: undefined, status: "idle", currentTimeSeconds: 0 } };
 }
 
 /** UI-only full playlist loader used by the demo button. */

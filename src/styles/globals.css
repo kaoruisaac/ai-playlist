@@ -577,15 +577,6 @@ select:focus {
     color: var(--accent-dark);
     border-bottom: 2px solid var(--accent);
   }
-  .mobile-tabs b {
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    background: var(--accent);
-    border-radius: 50%;
-    top: 7px;
-    right: 6px;
-  }
   .messages {
     max-height: 48vh;
   }

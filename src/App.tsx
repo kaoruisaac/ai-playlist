@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps, react-hooks/immutability */
+/* eslint-disable react-hooks/exhaustive-deps */
 
 import { FormEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { YouTubePlayer } from "./components/YouTubePlayer";
@@ -75,7 +75,6 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showPedelecInstallModal, setShowPedelecInstallModal] = useState(false);
   const [tab, setTab] = useState<"chat" | "music">("chat");
-  const [unread, setUnread] = useState(false);
   const [agentText, setAgentText] = useState("");
   const [progressPhase, setProgressPhase] = useState<TaskProgressPhase | null>(null);
   const [, setConnectionVersion] = useState(0);
@@ -276,21 +275,6 @@ export default function App() {
   const playlist = session?.playlist;
   const currentIndex =
     playlist?.tracks.findIndex((track) => track.id === active?.id) ?? -1;
-  function introduce(trackId: string) {
-    if (!session || session.introducedTrackIds.includes(trackId)) return;
-    const track = session.playlist?.tracks.find((item) => item.id === trackId);
-    if (!track) return;
-    update((current) => ({
-      ...addMessage(current, {
-        role: "agent",
-        kind: "track-introduction",
-        content: `*${track.title}*\n${track.introduction}`,
-        trackId,
-      }),
-      introducedTrackIds: [...current.introducedTrackIds, trackId],
-    }));
-    if (tab !== "chat") setUnread(true);
-  }
   function select(trackId: string, play = false) {
     update((current) => ({
       ...current,
@@ -302,7 +286,6 @@ export default function App() {
         currentTimeSeconds: 0,
       },
     }));
-    if (play) introduce(trackId);
   }
   function next() {
     if (!playlist) return;
@@ -342,7 +325,6 @@ export default function App() {
         status: "loading",
       },
     }));
-    introduce(active.id);
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -470,12 +452,9 @@ export default function App() {
       <section className="mobile-tabs">
         <button
           className={tab === "chat" ? "selected" : ""}
-          onClick={() => {
-            setTab("chat");
-            setUnread(false);
-          }}
+          onClick={() => setTab("chat")}
         >
-          {copy.tabs.chat} {unread && <b />}
+          {copy.tabs.chat}
         </button>
         <button
           className={tab === "music" ? "selected" : ""}
@@ -615,8 +594,6 @@ export default function App() {
                     session.playback.status === "loading"
                   }
                   onPlay={() => {
-                    const trackId =
-                      latestSessionRef.current?.playback.activeTrackId;
                     update((current) => ({
                       ...current,
                       playback: {
@@ -625,7 +602,6 @@ export default function App() {
                         hasPlaybackGesture: true,
                       },
                     }));
-                    if (trackId) introduce(trackId);
                   }}
                   onPause={() =>
                     update((current) => ({
