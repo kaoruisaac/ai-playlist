@@ -24,6 +24,14 @@ describe("i18n", () => {
     expect(zh).toContain("get_playlist_preferences");
     expect(en).toContain("get_playlist_preferences");
     expect(en).toContain("natural English");
+    expect(zh).toContain("不要為了先規劃、排序或研究完整目標歌單而延後第一首");
+    expect(zh).toContain("通常每批追加約 2～3 首");
+    expect(zh).toContain("優先策略而非固定限制");
+    expect(en).toContain("Do not delay the first playable track");
+    expect(en).toContain("usually append about 2–3 tracks per batch");
+    expect(en).toContain("preference, not a fixed requirement");
+    expect(zh).not.toContain("剩餘目標歌曲優先用單一 append_tracks");
+    expect(en).not.toContain("all remaining target tracks in one append_tracks call");
     expect(en).not.toContain("你是一位");
   });
 });

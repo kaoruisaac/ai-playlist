@@ -59,7 +59,7 @@ export const trackArgsSchema = {
         properties: {
           title: { type: "string", minLength: 1, maxLength: 150, description: "Song title." },
           artist: { type: "string", minLength: 1, maxLength: 150, description: "Performing artist." },
-          playlistRole: { type: "string", minLength: 1, maxLength: 80, description: "This track's sequencing role in the playlist." },
+          playlistRole: { type: "string", minLength: 1, maxLength: 80, description: "This track's role among the currently planned tracks. For an early first track, a simple role such as opener is sufficient; the complete playlist need not be planned first." },
           videoId: { type: "string", pattern: "^[A-Za-z0-9_-]{11}$", description: "The 11-character YouTube video ID. Do not submit a full URL.", examples: ["vx4kLgnFexo"] },
         },
         required: ["title", "artist", "playlistRole", "videoId"],
@@ -77,7 +77,7 @@ export const startNewPlaylistArgsSchema = {
 export const appendTracksArgsSchema = {
   type: "object",
   properties: {
-    tracks: { type: "array", minItems: 1, maxItems: 20, description: "Tracks appended to the end of the current playlist in playback order.", items: trackArgsSchema },
+    tracks: { type: "array", minItems: 1, maxItems: 20, description: "Tracks currently ready to append, in their intended order. The complete target playlist does not need to be ready first.", items: trackArgsSchema },
   },
   required: ["tracks"],
 } satisfies ToolArgsSchema;
