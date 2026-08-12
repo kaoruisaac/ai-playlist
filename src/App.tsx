@@ -6,6 +6,7 @@ import { fixturePlaylist } from "./lib/fixture";
 import { connectPedelec, type PedelecConnection } from "./lib/pedelec";
 import {
   classifyAgentDraft,
+  hasAgentChatOutput,
   sanitizeAgentConversation,
 } from "./lib/agent-message";
 import {
@@ -371,7 +372,8 @@ export default function App() {
         pedelecConnectionRef.current === connection &&
         activeConnectionIdRef.current === connectionId
       ) {
-        clearAgentDraft();
+        if (hasAgentChatOutput(agentDraftRef.current)) flushAgentDraft();
+        else clearAgentDraft();
         update((current) =>
           addMessage(current, {
             role: "agent",
