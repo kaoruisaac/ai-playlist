@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "pedelec-integration": {
+      "source": "kaoruisaac/pedelec",
+      "sourceType": "github",
+      "skillPath": "skills/pedelec-integration/SKILL.md",
+      "computedHash": "e8de6fcb61e776e2edbcc5ece85755f1475ee7a6413de6a97e9099489fb46204"
+    }
+  }
+}
