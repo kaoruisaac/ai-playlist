@@ -37,14 +37,13 @@ export function loadPrefs(): PlaylistPreferences {
     const value = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
     return {
       provider: typeof value.provider === "string" && value.provider.trim() ? value.provider : undefined,
-      model: typeof value.model === "string" ? value.model : undefined,
       preferredTrackCount: preferredTrackCount(value.preferredTrackCount),
       locale: detectLocale(value.locale, typeof navigator === "undefined" ? undefined : navigator.languages?.length ? navigator.languages : [navigator.language]),
     };
   } catch { return { preferredTrackCount: 10, locale: detectLocale(undefined, typeof navigator === "undefined" ? undefined : navigator.languages?.length ? navigator.languages : [navigator.language]) }; }
 }
 export function persistPrefs(settings: Omit<PlaylistPreferences, "locale"> & Partial<Pick<PlaylistPreferences, "locale">>) {
-  try { localStorage.setItem(PREF_KEY, JSON.stringify({ provider: settings.provider, model: settings.model, preferredTrackCount: preferredTrackCount(settings.preferredTrackCount), locale: detectLocale(settings.locale, typeof navigator === "undefined" ? undefined : navigator.languages?.length ? navigator.languages : [navigator.language]) })); } catch { /* storage is optional */ }
+  try { localStorage.setItem(PREF_KEY, JSON.stringify({ provider: settings.provider, preferredTrackCount: preferredTrackCount(settings.preferredTrackCount), locale: detectLocale(settings.locale, typeof navigator === "undefined" ? undefined : navigator.languages?.length ? navigator.languages : [navigator.language]) })); } catch { /* storage is optional */ }
 }
 export function clearLegacySession() { try { localStorage.removeItem(SESSION_KEY); } catch { /* storage is optional */ } }
 export const newSession = (): PlaylistSession => ({ schemaVersion: 3, id: id(), createdAt: now(), updatedAt: now(), originalRequest: "", messages: [], playback: { status: "idle", hasPlaybackGesture: false }, agentSettings: loadPrefs() });

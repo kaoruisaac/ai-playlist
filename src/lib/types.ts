@@ -9,8 +9,8 @@ export type ChatMessage = { id: string; role: "user" | "agent" | "system"; kind:
 export type PlaybackState = { activeTrackId?: string; status: PlaybackStatus; currentTimeSeconds?: number; hasPlaybackGesture: boolean };
 export type PreferredTrackCount = 5 | 10 | 20;
 import type { AppLocale } from "./i18n";
-export type AgentSettings = { provider?: string; model?: string; preferredTrackCount: PreferredTrackCount; locale: AppLocale };
+export type AgentSettings = { provider?: string; preferredTrackCount: PreferredTrackCount; locale: AppLocale };
 export type ProviderOption = { code: string; name: string; available: boolean };
-export type DesktopProviderSettings = { defaultProvider: string | null; defaultModels: Partial<Record<string, string>> };
+export type DesktopProviderSettings = { defaultProvider: string | null };
 export type PlaylistSession = { schemaVersion: 3; id: string; createdAt: string; updatedAt: string; originalRequest: string; interpretedVibe?: string; messages: ChatMessage[]; playlist?: Playlist; playback: PlaybackState; agentSettings: AgentSettings };
 export type PedelecState = "checking" | "not-installed" | "disconnected" | "needs-settings" | "connected" | "running" | "waiting_tool_result" | "error";

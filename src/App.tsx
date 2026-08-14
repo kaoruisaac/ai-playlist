@@ -65,12 +65,10 @@ export default function App() {
   const [provider, setProvider] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [providerDraft, setProviderDraft] = useState("");
-  const [modelDraft, setModelDraft] = useState("");
   const [providerOptions, setProviderOptions] = useState<ProviderOption[]>([]);
   const [desktopSettings, setDesktopSettings] =
     useState<DesktopProviderSettings>({
       defaultProvider: null,
-      defaultModels: {},
     });
   const [providerWarning, setProviderWarning] = useState("");
   const [showSettings, setShowSettings] = useState(false);
@@ -205,7 +203,6 @@ export default function App() {
             );
             setDesktopSettings({
               defaultProvider: data.defaultProvider,
-              defaultModels: data.defaultModels,
             });
             const saved = current.agentSettings.provider;
             const savedIsAvailable =
@@ -393,7 +390,6 @@ export default function App() {
         ? savedProvider
         : "",
     );
-    setModelDraft(session.agentSettings.model ?? "");
     setShowSettings(true);
   }
   function saveSettings() {
@@ -407,7 +403,6 @@ export default function App() {
       agentSettings: {
         ...session.agentSettings,
         provider: providerDraft || undefined,
-        model: modelDraft.trim() || undefined,
       },
     };
     replaceSession(next);
@@ -813,7 +808,6 @@ export default function App() {
                 value={providerDraft}
                 onChange={(event) => {
                   setProviderDraft(event.target.value);
-                  setModelDraft("");
                 }}
               >
                 {desktopDefault ? <option value="">{interpolate(copy.settingsModal.useDefault, { provider: desktopDefault.name })}</option> : <option value="" disabled>{copy.settingsModal.choose}</option>}
@@ -822,14 +816,6 @@ export default function App() {
             </label>
             {providerWarning && <p className="settings-warning">{providerWarning}</p>}
             {availableProviders.length === 0 && <p className="settings-warning">{copy.settingsModal.none}</p>}
-            <label>
-              Model
-              <input
-                value={modelDraft}
-                onChange={(event) => setModelDraft(event.target.value)}
-                placeholder={desktopSettings.defaultModels[providerDraft || desktopSettings.defaultProvider || ""] ? interpolate(copy.settingsModal.modelDefault, { model: desktopSettings.defaultModels[providerDraft || desktopSettings.defaultProvider || ""] ?? "" }) : copy.settingsModal.modelBlank}
-              />
-            </label>
             <button
               className="button"
               disabled={providerDraft ? !availableProviders.some((item) => item.code === providerDraft) : !desktopDefault}

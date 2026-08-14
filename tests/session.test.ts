@@ -54,7 +54,7 @@ describe("playlist session", () => {
     expect(newSession().agentSettings.preferredTrackCount).toBe(10);
     for (const preferredTrackCount of [5, 10, 20] as const) {
       localStorage.setItem("ai-playlist:preferences:v1", JSON.stringify({ provider: "codex", model: "x", preferredTrackCount }));
-      expect(newSession().agentSettings).toMatchObject({ provider: "codex", model: "x", preferredTrackCount });
+      expect(newSession().agentSettings).toEqual({ provider: "codex", preferredTrackCount, locale: "zh-TW" });
     }
     localStorage.setItem("ai-playlist:preferences:v1", JSON.stringify({ preferredTrackCount: 12 }));
     expect(loadPrefs().preferredTrackCount).toBe(10);
@@ -65,8 +65,8 @@ describe("playlist session", () => {
     localStorage.setItem("ai-playlist:session:v1", JSON.stringify({ messages: ["old"], playlist: { tracks: [] }, playback: {} }));
     clearLegacySession();
     expect(localStorage.getItem("ai-playlist:session:v1")).toBeNull();
-    persistPrefs({ provider: "codex", model: "model", preferredTrackCount: 5 });
-    expect(JSON.parse(localStorage.getItem("ai-playlist:preferences:v1") ?? "{}")).toEqual({ provider: "codex", model: "model", preferredTrackCount: 5, locale: "zh-TW" });
+    persistPrefs({ provider: "codex", preferredTrackCount: 5 });
+    expect(JSON.parse(localStorage.getItem("ai-playlist:preferences:v1") ?? "{}")).toEqual({ provider: "codex", preferredTrackCount: 5, locale: "zh-TW" });
     const fresh = newSession();
     expect(fresh.messages).toEqual([]);
     expect(fresh.playlist).toBeUndefined();

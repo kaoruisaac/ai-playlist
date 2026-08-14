@@ -13,7 +13,7 @@ export type PedelecCallbacks = {
   onChatDelta: (delta: string, context: ChatEventContext) => void;
   onBeforeTool: (context: ToolCallContext) => void;
   onTracksAppended?: (data: { addedCount: number; trackCount: number; createdPlaylist: boolean }) => void;
-  onProviderSettings?: (data: { providers: ProviderInfo[]; defaultProvider: ProviderCode | null; defaultModels: Partial<Record<ProviderCode, string>> }) => void;
+  onProviderSettings?: (data: { providers: ProviderInfo[]; defaultProvider: ProviderCode | null }) => void;
   onConnectionError?: () => void;
 };
 
@@ -90,7 +90,7 @@ export async function connectPedelec(
     defineTool({ name: "remove_tracks", description: "Remove specified tracks by stable track ID. Read state first and never infer an ambiguous title.", argsSchema: { type: "object", properties: { trackIds: { type: "array", items: { type: "string" }, minItems: 1 } }, required: ["trackIds"] }, handler: (args: { trackIds: string[] }, ctx) => { const denied = guarded(ctx); if (denied) return denied; update((s) => args.trackIds.reduce((next, id) => removeTrack(next, id), s)); return result(true, "Tracks removed"); } }),
     defineTool({ name: "reorder_tracks", description: "Move a track one position up or down while preserving the active track.", argsSchema: { type: "object", properties: { trackId: { type: "string" }, direction: { type: "string", enum: ["up", "down"] } }, required: ["trackId", "direction"] }, handler: (args: { trackId: string; direction: "up" | "down" }, ctx) => { const denied = guarded(ctx); if (denied) return denied; update((s) => moveTrack(s, args.trackId, args.direction === "up" ? -1 : 1)); return result(true, "Track reordered"); } }),
   ] as const;
-  const session = await pedelec.createSession({ provider, model: settings.model, skills: { guidance: getAgentGuidance(settings.locale), tools: tools as never }, autoEndOnDisconnect: true });
+  const session = await pedelec.createSession({ provider, skills: { guidance: getAgentGuidance(settings.locale), tools: tools as never }, autoEndOnDisconnect: true });
   let disposed = false;
   const unsubscribers = [
     session.onChat((delta, ctx) => { const next = (turnChatBuffers.get(ctx.turnId) ?? "") + delta; turnChatBuffers.set(ctx.turnId, next); if (hasAgentChatOutput(next)) warmedTurns.add(ctx.turnId); callbacks.onChatDelta(delta, ctx); }),
