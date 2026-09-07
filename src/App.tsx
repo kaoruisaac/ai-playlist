@@ -85,6 +85,8 @@ export default function App() {
   const activeConnectionIdRef = useRef<string | null>(null);
   const activeTurnIdRef = useRef<string | null>(null);
   const agentDraftRef = useRef("");
+  const draftCompletedRef = useRef(false);
+  const pendingReconcileRef = useRef<{ turnId: string; content: string } | null>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
   const agentBusy = state === "running" || state === "waiting_tool_result";
   const locale = session?.agentSettings.locale ?? "zh-TW";
@@ -113,14 +115,61 @@ export default function App() {
   function clearAgentDraft() {
     agentDraftRef.current = "";
     activeTurnIdRef.current = null;
+    draftCompletedRef.current = false;
     setAgentText("");
+  }
+  function resetAgentLiveState() {
+    clearAgentDraft();
+    pendingReconcileRef.current = null;
+  }
+  function applyAgentDraft(raw: string, completed = false) {
+    agentDraftRef.current = raw;
+    draftCompletedRef.current = completed;
+    setAgentText(classifyAgentDraft(raw).visibleText);
+  }
+  function ensureActiveTurn(turnId: string) {
+    if (!activeTurnIdRef.current) {
+      activeTurnIdRef.current = turnId;
+      return;
+    }
+    if (activeTurnIdRef.current !== turnId) {
+      resetAgentLiveState();
+      activeTurnIdRef.current = turnId;
+    }
+  }
+  function reconcileFlushedAgentMessage(turnId: string, raw: string) {
+    const content = sanitizeAgentConversation(raw);
+    const pending = pendingReconcileRef.current;
+    if (!pending || pending.turnId !== turnId) return false;
+    pendingReconcileRef.current = null;
+    if (!content || pending.content === content) return true;
+    update((current) => {
+      const messages = [...current.messages];
+      for (let index = messages.length - 1; index >= 0; index -= 1) {
+        const message = messages[index];
+        if (message.role === "agent" && message.kind === "conversation") {
+          messages[index] = { ...message, content };
+          return { ...current, updatedAt: new Date().toISOString(), messages };
+        }
+      }
+      return addMessage(current, { role: "agent", kind: "conversation", content });
+    });
+    return true;
   }
   function flushAgentDraft() {
     const content = sanitizeAgentConversation(agentDraftRef.current);
-    if (content)
+    const turnId = activeTurnIdRef.current;
+    if (content) {
       update((current) =>
         addMessage(current, { role: "agent", kind: "conversation", content }),
       );
+      pendingReconcileRef.current =
+        turnId && !draftCompletedRef.current
+          ? { turnId, content }
+          : null;
+    } else {
+      pendingReconcileRef.current = null;
+    }
     clearAgentDraft();
   }
 
@@ -133,7 +182,7 @@ export default function App() {
     });
     return () => {
       attemptRef.current += 1;
-      clearAgentDraft();
+      resetAgentLiveState();
       const connection = pedelecConnectionRef.current;
       pedelecConnectionRef.current = null;
       if (connection) void connection.dispose();
@@ -222,14 +271,24 @@ export default function App() {
               context.sessionId !== activeConnectionIdRef.current
             )
               return;
-            if (!activeTurnIdRef.current)
-              activeTurnIdRef.current = context.turnId;
-            if (activeTurnIdRef.current !== context.turnId) {
-              clearAgentDraft();
-              activeTurnIdRef.current = context.turnId;
-            }
+            ensureActiveTurn(context.turnId);
             agentDraftRef.current += delta;
+            draftCompletedRef.current = false;
             setAgentText(classifyAgentDraft(agentDraftRef.current).visibleText);
+          },
+          onChat: (text, context) => {
+            if (
+              attempt !== attemptRef.current ||
+              context.sessionId !== activeConnectionIdRef.current
+            )
+              return;
+            ensureActiveTurn(context.turnId);
+            if (agentDraftRef.current.length > 0) {
+              applyAgentDraft(text, true);
+              return;
+            }
+            if (reconcileFlushedAgentMessage(context.turnId, text)) return;
+            applyAgentDraft(text, true);
           },
           onBeforeTool: (context) => {
             if (
@@ -354,7 +413,7 @@ export default function App() {
       }),
     );
     setInput("");
-    clearAgentDraft();
+    resetAgentLiveState();
     setProgressPhase("understanding");
     const connectionId = connection.session.sessionId;
     try {

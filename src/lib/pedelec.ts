@@ -1,4 +1,4 @@
-import { defineTool, Pedelec, type ChatEventContext, type PedelecSession, type ProviderCode, type ProviderInfo, type ToolCallContext } from "@kaoruisaac/pedelec";
+import { defineTool, Pedelec, type ChatDeltaEventContext, type ChatEventContext, type PedelecSession, type ProviderCode, type ProviderInfo, type ToolCallContext } from "@kaoruisaac/pedelec";
 import { appendTracksArgsSchema, playlistSchema, startNewPlaylistArgsSchema, startNewPlaylistInputSchema, trackInputSchema, normalizeTrackKey, type StartNewPlaylistInput } from "./schema";
 import type { PedelecState, PlaylistSession } from "./types";
 import { appendTracks, appendTracksToPlaylist, buildEmptyPlaylist, moveTrack, removeTrack, startNewPlaylist } from "./session";
@@ -10,7 +10,8 @@ type Update = (fn: (session: PlaylistSession) => PlaylistSession) => void;
 export type PedelecConnection = { session: PedelecSession; provider: string; dispose: () => Promise<void> };
 export type PedelecCallbacks = {
   onState: (state: PedelecState) => void;
-  onChatDelta: (delta: string, context: ChatEventContext) => void;
+  onChatDelta: (delta: string, context: ChatDeltaEventContext) => void;
+  onChat: (text: string, context: ChatEventContext) => void;
   onBeforeTool: (context: ToolCallContext) => void;
   onTracksAppended?: (data: { addedCount: number; trackCount: number; createdPlaylist: boolean }) => void;
   onProviderSettings?: (data: { providers: ProviderInfo[]; defaultProvider: ProviderCode | null }) => void;
@@ -92,8 +93,20 @@ export async function connectPedelec(
   ] as const;
   const session = await pedelec.createSession({ provider, skills: { guidance: getAgentGuidance(settings.locale), tools: tools as never }, autoEndOnDisconnect: true });
   let disposed = false;
+  const markWarmedFromText = (turnId: string, text: string) => {
+    if (hasAgentChatOutput(text)) warmedTurns.add(turnId);
+  };
   const unsubscribers = [
-    session.onChat((delta, ctx) => { const next = (turnChatBuffers.get(ctx.turnId) ?? "") + delta; turnChatBuffers.set(ctx.turnId, next); if (hasAgentChatOutput(next)) warmedTurns.add(ctx.turnId); callbacks.onChatDelta(delta, ctx); }),
+    session.onChatDelta((delta, ctx) => {
+      const next = (turnChatBuffers.get(ctx.turnId) ?? "") + delta;
+      turnChatBuffers.set(ctx.turnId, next);
+      markWarmedFromText(ctx.turnId, next);
+      callbacks.onChatDelta(delta, ctx);
+    }),
+    session.onChat((text, ctx) => {
+      markWarmedFromText(ctx.turnId, text);
+      callbacks.onChat(text, ctx);
+    }),
     session.onStatus((status) => { if (status === "idle" || status === "error" || status === "ended") turnChatBuffers.clear(); callbacks.onState(status === "idle" ? "connected" : status === "running" || status === "waiting_tool_result" ? status : status === "error" ? "error" : "disconnected"); }),
     session.onError(() => { callbacks.onConnectionError?.(); callbacks.onState("error"); }),
     session.onEnded(() => callbacks.onState("disconnected")),
